@@ -1,18 +1,26 @@
 addpath_yart
 %% Motion Retargeting of Post-Rigging Results
 ccc
+% Plot configuration
+SKIP_IF_VID_EXISTS = 0;
+fig_w              = 0.15;
+fig_h              = 0.3;
+AXIS_OFF           = 1;
+SET_AXISLABEL      = 0;
+axis_info          = [-1,+1,-1,+1,-0.02,2];
+axes_info          = [0,0,1,1];
+view_info          = [85,12];
+
 % Check existing mocaps (post-rigging results)
 d = dir_compact('../data/post_rig_cf/*.mat','VERBOSE',1);
 robot_names = {'ambidex','atlas','coman','thormang'};
-
-% robot_names = {'ambidex'}; 
-
 n_mocap = length(d); n_robot = length(robot_names);
 mocap_names = cell(1,n_mocap);
 for m_idx = 1:n_mocap
     mocap_names{m_idx} = strrep(d(m_idx).name,'.mat','');
 end
 fprintf('n_mocap:[%d], n_robot:[%d]\n',n_mocap,n_robot);
+
 % Loop
 mocap_idxs = 1:n_mocap;
 for m_idx = 1:length(mocap_idxs) % for different mocap
@@ -46,7 +54,9 @@ for m_idx = 1:length(mocap_idxs) % for different mocap
         chain_robot = l.chain_robot; T_roots_robot = l.T_roots_robot; q_revs_robot = l.q_revs_robot;
         playback_mr_results(mocap_name,robot_name,...
             secs,chain_rig,T_roots_rig,q_revs_rig,chain_robot,T_roots_robot,q_revs_robot,...
-            'vid_folder_path','../vid/mr','SAVE_VID',1,'SKIP_IF_VID_EXISTS',1,'fig_h',0.32);
+            'vid_folder_path','../vid/mr','SAVE_VID',1,'SKIP_IF_VID_EXISTS',SKIP_IF_VID_EXISTS,...
+            'fig_w',fig_w,'fig_h',fig_h,'AXIS_OFF',AXIS_OFF,'SET_AXISLABEL',SET_AXISLABEL,...
+            'axis_info',axis_info,'axes_info',axes_info,'view_info',view_info);
 
         % Fine-tuning of wrist trajectories
         ft(chain_robot,secs,chain_rig,T_roots_robot,q_revs_robot,T_roots_rig,q_revs_rig,...
@@ -77,13 +87,13 @@ for m_idx = 1:length(mocap_idxs) % for different mocap
         mat_name = sprintf('../data/mr_ft_cf/%s.mat',chain_name);
         l = load(mat_name); secs = l.secs; chain_robot = l.chain;
         T_roots = l.T_roots; q_revs = l.q_revs; T_roots_cf = l.T_roots_cf; q_revs_cf = l.q_revs_cf;
-        axis_info = [-1.2,1.2,-1.2,1.2,0,2.2]; view_info = [80,12]; AXIS_OFF = 1;
         animate_sch_results(chain_name,secs,chain_robot,T_roots,q_revs,T_roots_cf,q_revs_cf,...
-            'mfa',0.5,'cfa',0.05,'axis_info',axis_info,'view_info',view_info,...
-            'AXIS_OFF',AXIS_OFF,'folder_path','../vid/mr_ft_cf','PLOT_EACH_TICK',1,...
-            'SAVE_VID',1,'SKIP_IF_MP4_EXIST',1);
-        
-    end
-end
+            'mfa',0.5,'cfa',0.05,'folder_path','../vid/mr_ft_cf','PLOT_EACH_TICK',1,...
+            'SAVE_VID',1,'SKIP_IF_VID_EXISTS',SKIP_IF_VID_EXISTS,...
+            'fig_w',fig_w,'fig_h',fig_h,'AXIS_OFF',AXIS_OFF,'SET_AXISLABEL',SET_AXISLABEL,...
+            'axis_info',axis_info,'axes_info',axes_info,'view_info',view_info);
+
+    end % for robot_idx = 1:n_robot % for different robots
+end % for m_idx = 1:length(mocap_idxs) % for different mocap
 
 %%

@@ -7,14 +7,30 @@ function playback_mr_results(mocap_name,robot_name,...
 % Parse options
 iP = inputParser;
 addParameter(iP,'vid_folder_path','../vid/mr');     % folder path to save videos
+addParameter(iP,'mfa',0.4);
 addParameter(iP,'SAVE_VID',0);
 addParameter(iP,'SKIP_IF_VID_EXISTS',0);
-addParameter(iP,'fig_h',0.32);                      % figure height
+addParameter(iP,'fig_w',0.2);
+addParameter(iP,'fig_h',0.3);
+addParameter(iP,'axis_info',[-1,+1,-1,+1,-0.1,2]);
+addParameter(iP,'AXIS_OFF',1);
+addParameter(iP,'SET_AXISLABEL',0);
+addParameter(iP,'axes_info',[0,0,1,1]);
+addParameter(iP,'view_info',[80,12]);
 parse(iP,varargin{:});
-vid_folder_path = iP.Results.vid_folder_path;
-SAVE_VID = iP.Results.SAVE_VID;
+vid_folder_path    = iP.Results.vid_folder_path;
+mfa                = iP.Results.mfa;
+SAVE_VID           = iP.Results.SAVE_VID;
 SKIP_IF_VID_EXISTS = iP.Results.SKIP_IF_VID_EXISTS;
-fig_h = iP.Results.fig_h;
+fig_w              = iP.Results.fig_w;
+fig_h              = iP.Results.fig_h;
+axis_info          = iP.Results.axis_info;
+AXIS_OFF           = iP.Results.AXIS_OFF;
+SET_AXISLABEL      = iP.Results.SET_AXISLABEL;
+axes_info          = iP.Results.axes_info;
+view_info          = iP.Results.view_info;
+
+% Motion length
 L = length(secs); HZ = round(L/(secs(end)-secs(1)));
 
 % If 'chain_rig' is empty
@@ -63,10 +79,8 @@ for tick = 1:L
     q_rev_robot = q_revs_robot(tick,:); T_root_robot = T_roots_robot{tick};
     chain_robot = update_chain_q_T_root(chain_robot,q_rev_robot,T_root_robot);
     % Plot common-rig
-    AXIS_OFF = 1; SET_AXISLABEL = 0; axes_info = [0,0,1,1];
     if RIG_EXISTS
-        fig_idx = 1; fig_pos = [0.0,0.6,0.2,fig_h]; view_info = [80,12];
-        axis_info = [-1.2,1.2,-1.2,1.2,-inf,2.2];
+        fig_idx = 1; fig_pos = [0.0,0.6,fig_w,fig_h];
         fig_rig = plot_chain(chain_rig,'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,...
             'view_info',view_info,'axis_info',axis_info,'AXIS_OFF',AXIS_OFF,...
             'SET_AXISLABEL',SET_AXISLABEL,'axes_info',axes_info,...
@@ -76,15 +90,14 @@ for tick = 1:L
         % plot_title(title_str,'fig_idx',fig_idx,'tfs',13);
     end
     % Plot robot
-    fig_idx = 2; fig_pos = [0.2,0.6,0.2,fig_h]; view_info = [80,12];
-    axis_info = [-1.2,1.2,-1.2,1.2,-inf,2.2];
+    fig_idx = 2; fig_pos = [fig_w,0.6,fig_w,fig_h];
     chain_robot_ground = move_chain_two_feet_on_ground(chain_robot,'xy_offset',cv([0,0]));
     ral = chain_robot_ground.sz.xyz_len(3)/15;
     fig_robot = plot_chain(chain_robot_ground,'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,...
         'view_info',view_info,'axis_info',axis_info,'AXIS_OFF',AXIS_OFF,...
         'SET_AXISLABEL',SET_AXISLABEL,'axes_info',axes_info,...
         'PLOT_LINK',0,'PLOT_ROTATE_AXIS',1,'ral',ral,...
-        'PLOT_CAPSULE',0,'mfa',0.25,'bafa',0.15,...
+        'PLOT_CAPSULE',0,'mfa',mfa,'bafa',0.15,...
         'DISREGARD_JOI_GUIDE',1);
     drawnow;
     if RIG_EXISTS

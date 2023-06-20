@@ -12,16 +12,27 @@ addParameter(iP,'SMOOTH_TRAJ',1);
 addParameter(iP,'PLOT_EACH_TICK',1);
 addParameter(iP,'SAVE_VID',1);
 addParameter(iP,'SKIP_IF_MP4_EXIST',1);
-addParameter(iP,'view_info',[88,16]);
+addParameter(iP,'fig_w',0.2);
+addParameter(iP,'fig_h',0.3);
+addParameter(iP,'AXIS_OFF',1);
+addParameter(iP,'SET_AXISLABEL',0);
+addParameter(iP,'axis_info',[-1,+1,-1,+1,-0.1,2]);
+addParameter(iP,'axes_info',[0,0,1,1]);
+addParameter(iP,'view_info',[80,12]);
 parse(iP,varargin{:});
-folder_path         = iP.Results.folder_path;
-T_parts             = iP.Results.T_parts;
-SMOOTH_TRAJ         = iP.Results.SMOOTH_TRAJ;
-PLOT_EACH_TICK      = iP.Results.PLOT_EACH_TICK;
-SAVE_VID            = iP.Results.SAVE_VID;
-SKIP_IF_MP4_EXIST   = iP.Results.SKIP_IF_MP4_EXIST;
-view_info           = iP.Results.view_info;
-D2R = pi/180;
+folder_path        = iP.Results.folder_path;
+T_parts            = iP.Results.T_parts;
+SMOOTH_TRAJ        = iP.Results.SMOOTH_TRAJ;
+PLOT_EACH_TICK     = iP.Results.PLOT_EACH_TICK;
+SAVE_VID           = iP.Results.SAVE_VID;
+SKIP_IF_MP4_EXIST  = iP.Results.SKIP_IF_MP4_EXIST;
+fig_w              = iP.Results.fig_w;
+fig_h              = iP.Results.fig_h;
+AXIS_OFF           = iP.Results.AXIS_OFF;
+SET_AXISLABEL      = iP.Results.SET_AXISLABEL;
+axis_info          = iP.Results.axis_info;
+axes_info          = iP.Results.axes_info;
+view_info          = iP.Results.view_info;
 
 % Rigs
 chain_rig_pre     = chain_rig;
@@ -76,7 +87,7 @@ vobj{7} = init_vid_record(vidpath7,'HZ',HZ,'SAVE_VID',SAVE_VID);
 for tick = 1:L % for each tick
     if tick == 1, RESET = 1; else, RESET = 0; end
     % Update mocap
-    sec = secs(tick); chain_mocap = chains{tick}; 
+    sec = secs(tick); chain_mocap = chains{tick};
     if ~isfield(chain_mocap,'joi')
         fprintf(2,'[animate_post_rigging_results] JOI does not exist. \n');
     end
@@ -105,89 +116,114 @@ for tick = 1:L % for each tick
         chain_rig_post,q_rev_post,T_root_post,'FV',1,'RESET',RESET);
     chain_rig_post = move_chain_two_feet_on_ground(chain_rig_post);
     [com_post,com_ground_post,zmp_ground_post] = get_com_zmp_ground(chain_rig_post,'fig_idx',3);
+
     % Animate
     if PLOT_EACH_TICK % plot each tick
+
+        % Plot configuration
+        tfs     = 15;
+        zmp_col = 'r'; 
+        com_col = 0.5*[1,1,1];
+
         % Figure 1: mocap skeleton
-        axis_info = [-1,+1,-1,+1,-0.1,2];
-        fig_w_rig = 0.17; fig_h_rig = 0.3;
-        fig_idx = 1; fig_pos = [0.0,0.7,fig_w_rig,fig_h_rig];
-        fig1 = plot_chain(chain_mocap,'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,...
-            'axis_info',axis_info,'view_info',view_info,...
-            'PLOT_LINK',1,'PLOT_JOINT_AXIS',0,'jalw',3,'PLOT_JOINT_SPHERE',1,'jsr',0.025,...
-            'DISREGARD_JOI_GUIDE',1);
-        if ~isempty(T_parts)
-            T_joi_chain = get_t_joi(chain_mocap,chain_mocap.joi);
-            plot_body_cubes_frank_mocap(T_root,T_rh,T_lh,T_rf,T_lf,T_head,'fig_idx',fig_idx,...
-                'size',1.5*norm(t2p(T_joi_chain.torso)-t2p(T_joi_chain.neck)),'p_offset',p_diff);
+        fig_idx = 1; fig_pos = [0.0,0.6,fig_w,fig_h];
+        fig1 = plot_chain(chain_mocap,'fig_idx',fig_idx,'subfig_idx',1,...
+            'fig_pos',fig_pos,'PLOT_LINK',1,'DISREGARD_JOI_GUIDE',1,...
+            'PLOT_JOINT_AXIS',0,'jalw',3,'PLOT_JOINT_SPHERE',1,'jsr',0.025,...
+            'AXIS_OFF',AXIS_OFF,'SET_AXISLABEL',SET_AXISLABEL,...
+            'axis_info',axis_info,'axes_info',axes_info,'view_info',view_info);
+        title_str = sprintf('[%d/%d][%.2f]sec MoCap Skeleton \n (%s)',tick,L,sec,mocap_name);
+        if ~AXIS_OFF
+            plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex');
         end
-        title_str = sprintf('[%d/%d][%.2f]sec MoCap Skeleton \n (%s)',tick,L,sec,mocap_name); 
-        tfs = 15;
-        plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex');
+
         % Figure 2: pre-rigging
-        fig_idx = 2; fig_pos = [0.15,0.7,fig_w_rig,fig_h_rig];
-        zmp_col = 'r'; com_col = 0.5*[1,1,1];
+        fig_idx = 2; fig_pos = [fig_w,0.6,fig_w,fig_h];
         fig2 = plot_chain(chain_rig_pre,...
-            'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,...
-            'SET_MATERIAL','DULL','axis_info',axis_info,'view_info',view_info,...
+            'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,'SET_MATERIAL','DULL',...
             'PLOT_LINK',0,'PLOT_JOINT_AXIS',0,'jalw',3,'PLOT_ROTATE_AXIS',0,...
             'PLOT_JOINT_SPHERE',0,'jsr',0.01,'bafa',0.5,'PLOT_CAPSULE',1,'cfc','k','cfa',0.3,...
-            'DISREGARD_JOI_GUIDE',1);
+            'DISREGARD_JOI_GUIDE',1,...
+            'AXIS_OFF',AXIS_OFF,'SET_AXISLABEL',SET_AXISLABEL,...
+            'axis_info',axis_info,'axes_info',axes_info,'view_info',view_info);
         plot_T(p2t(com_ground_pre),'fig_idx',fig_idx,'subfig_idx',1,...
             'PLOT_AXIS',0,'PLOT_SPHERE',1,'sr',0.04,'sfc',com_col,'sfa',0.9);
         plot_T(p2t(zmp_ground_pre),'fig_idx',fig_idx,'subfig_idx',2,...
             'PLOT_AXIS',0,'PLOT_SPHERE',1,'sr',0.04,'sfc',zmp_col,'sfa',0.9);
         title_str = sprintf('[%d/%d][%.2f]sec Pre-Rigging \n (%s)',tick,L,sec,mocap_name);
-        plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex');
+        if ~AXIS_OFF
+            plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex');
+        end
+
         % Figure 5: pre-rigging feet
-        fig_idx = 5; fig_y_com = 0.45; fig_h_com = 0.19;
-        fig_pos = [0.15,fig_y_com,fig_w_rig,fig_h_com];
+        fig_idx = 5; fig_h_com = 0.15;
+        fig_pos = [fig_w,0.55-fig_h_com,fig_w,fig_h_com];
         axis_info_com = [-0.5,+0.5,-1.0,+1.0,-inf,+inf];
         fig5 = plot_chain_feet_and_com(chain_rig_pre,...
-            'fig_idx',fig_idx,'fig_pos',fig_pos,'title_str',title_str,'tfs',tfs,...
+            'fig_idx',fig_idx,'fig_pos',fig_pos,'title_str','','tfs',tfs,...
             'zmp_ground',zmp_ground_pre,'PLOT_ZMP',1,'axis_info',axis_info_com);
+
         % Figure 3: uprighting
-        fig_idx = 3; fig_pos = [0.3,0.7,fig_w_rig,fig_h_rig];
+        fig_idx = 3; fig_pos = [2*fig_w,0.6,fig_w,fig_h];
         fig3 = plot_chain(chain_rig_upright,...
-            'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,...
-            'SET_MATERIAL','DULL','axis_info',axis_info,'view_info',view_info,...
+            'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,'SET_MATERIAL','DULL',...
             'PLOT_LINK',0,'PLOT_JOINT_AXIS',0,'jalw',3,'PLOT_ROTATE_AXIS',0,...
             'PLOT_JOINT_SPHERE',0,'jsr',0.01,'bafa',0.5,'PLOT_CAPSULE',1,'cfc','k','cfa',0.3,...
-            'DISREGARD_JOI_GUIDE',1);
+            'DISREGARD_JOI_GUIDE',1,...
+            'AXIS_OFF',AXIS_OFF,'SET_AXISLABEL',SET_AXISLABEL,...
+            'axis_info',axis_info,'axes_info',axes_info,'view_info',view_info);
         plot_T(p2t(com_ground_upright),'fig_idx',fig_idx,'subfig_idx',1,...
             'PLOT_AXIS',0,'PLOT_SPHERE',1,'sr',0.04,'sfc',com_col,'sfa',0.9);
         plot_T(p2t(zmp_ground_upright),'fig_idx',fig_idx,'subfig_idx',2,...
             'PLOT_AXIS',0,'PLOT_SPHERE',1,'sr',0.04,'sfc',zmp_col,'sfa',0.9);
         title_str = sprintf('[%d/%d][%.2f]sec Uprighting \n (%s)',tick,L,sec,mocap_name);
-        plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex');
+        if ~AXIS_OFF
+            plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex');
+        end
+
         % Figure 6: uprighting feet
-        fig_idx = 6; fig_pos = [0.3,fig_y_com,fig_w_rig,fig_h_com];
+        fig_idx = 6; 
+        fig_pos = [2*fig_w,0.55-fig_h_com,fig_w,fig_h_com];
         fig6 = plot_chain_feet_and_com(chain_rig_upright,...
-            'fig_idx',fig_idx,'fig_pos',fig_pos,'title_str',title_str,'tfs',tfs,...
+            'fig_idx',fig_idx,'fig_pos',fig_pos,'title_str','','tfs',tfs,...
             'zmp_ground',zmp_ground_upright,'PLOT_ZMP',1,'axis_info',axis_info_com);
+
         % Figure 4: post-rigging
-        fig_idx = 4; fig_pos = [0.45,0.7,fig_w_rig,fig_h_rig];
+        fig_idx = 4; 
+        fig_pos = [3*fig_w,0.6,fig_w,fig_h];
         fig4 = plot_chain(chain_rig_post,...
-            'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,...
-            'SET_MATERIAL','DULL','axis_info',axis_info,'view_info',view_info,...
+            'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,'SET_MATERIAL','DULL',...
             'PLOT_LINK',0,'PLOT_JOINT_AXIS',0,'jalw',3,'PLOT_ROTATE_AXIS',0,...
             'PLOT_JOINT_SPHERE',0,'jsr',0.01,'bafa',0.5,'PLOT_CAPSULE',1,'cfc','k','cfa',0.3,...
-            'DISREGARD_JOI_GUIDE',1);
+            'DISREGARD_JOI_GUIDE',1,...
+            'AXIS_OFF',AXIS_OFF,'SET_AXISLABEL',SET_AXISLABEL,...
+            'axis_info',axis_info,'axes_info',axes_info,'view_info',view_info);
         plot_T(p2t(com_ground_post),'fig_idx',fig_idx,'subfig_idx',1,...
             'PLOT_AXIS',0,'PLOT_SPHERE',1,'sr',0.04,'sfc',com_col,'sfa',0.9);
         plot_T(p2t(zmp_ground_post),'fig_idx',fig_idx,'subfig_idx',2,...
             'PLOT_AXIS',0,'PLOT_SPHERE',1,'sr',0.04,'sfc',zmp_col,'sfa',0.9);
         title_str = sprintf('[%d/%d][%.2f]sec Post-Rigging \n (%s)',tick,L,sec,mocap_name);
-        plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex');
+        if ~AXIS_OFF
+            plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex');
+        end
+
         % Figure 7: post-rigging feet
-        fig_idx = 7; fig_pos = [0.45,fig_y_com,fig_w_rig,fig_h_com];
+        fig_idx = 7; 
+        fig_pos = [3*fig_w,0.55-fig_h_com,fig_w,fig_h_com];
         fig7 = plot_chain_feet_and_com(chain_rig_post,...
-            'fig_idx',fig_idx,'fig_pos',fig_pos,'title_str',title_str,'tfs',tfs,...
+            'fig_idx',fig_idx,'fig_pos',fig_pos,'title_str','','tfs',tfs,...
             'zmp_ground',zmp_ground_post,'PLOT_ZMP',1,'axis_info',axis_info_com);
         drawnow;
-        record_vid(vobj{1},'fig',fig1); record_vid(vobj{2},'fig',fig2);
-        record_vid(vobj{3},'fig',fig3); record_vid(vobj{4},'fig',fig4);
-        record_vid(vobj{5},'fig',fig5); record_vid(vobj{6},'fig',fig6);
+
+        % Record video
+        record_vid(vobj{1},'fig',fig1);
+        record_vid(vobj{2},'fig',fig2);
+        record_vid(vobj{3},'fig',fig3);
+        record_vid(vobj{4},'fig',fig4);
+        record_vid(vobj{5},'fig',fig5);
+        record_vid(vobj{6},'fig',fig6);
         record_vid(vobj{7},'fig',fig7);
+
     end % if PLOT_EACH_TICK % plot each tick
 end % for tick = 1:L % for each tick
 

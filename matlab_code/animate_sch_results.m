@@ -9,30 +9,39 @@ iP = inputParser;
 addParameter(iP,'folder_path','../vid/post_rig_cf');
 addParameter(iP,'PLOT_EACH_TICK',1);
 addParameter(iP,'SAVE_VID',1);
-addParameter(iP,'SKIP_IF_MP4_EXIST',1);
+addParameter(iP,'SKIP_IF_VID_EXISTS',1);
 addParameter(iP,'mfa',0.4);
 addParameter(iP,'cfc',0.4*[1,1,1]);
 addParameter(iP,'cfa',0.4);
+addParameter(iP,'fig_w',0.2);
+addParameter(iP,'fig_h',0.3);
+addParameter(iP,'AXIS_OFF',1);
+addParameter(iP,'SET_AXISLABEL',0);
 addParameter(iP,'axis_info',[-1,+1,-1,+1,-0.1,2]);
-addParameter(iP,'view_info',[88,16]);
-addParameter(iP,'AXIS_OFF',0);
+addParameter(iP,'axes_info',[0,0,1,1]);
+addParameter(iP,'view_info',[80,12]);
 parse(iP,varargin{:});
-folder_path         = iP.Results.folder_path;
-PLOT_EACH_TICK      = iP.Results.PLOT_EACH_TICK;
-SAVE_VID            = iP.Results.SAVE_VID;
-SKIP_IF_MP4_EXIST   = iP.Results.SKIP_IF_MP4_EXIST;
-mfa                 = iP.Results.mfa;
-cfc                 = iP.Results.cfc;
-cfa                 = iP.Results.cfa;
-axis_info           = iP.Results.axis_info;
-view_info           = iP.Results.view_info;
-AXIS_OFF            = iP.Results.AXIS_OFF;
+folder_path        = iP.Results.folder_path;
+PLOT_EACH_TICK     = iP.Results.PLOT_EACH_TICK;
+SAVE_VID           = iP.Results.SAVE_VID;
+SKIP_IF_VID_EXISTS = iP.Results.SKIP_IF_VID_EXISTS;
+mfa                = iP.Results.mfa;
+cfc                = iP.Results.cfc;
+cfa                = iP.Results.cfa;
+fig_w              = iP.Results.fig_w;
+fig_h              = iP.Results.fig_h;
+AXIS_OFF           = iP.Results.AXIS_OFF;
+SET_AXISLABEL      = iP.Results.SET_AXISLABEL;
+axis_info          = iP.Results.axis_info;
+axes_info          = iP.Results.axes_info;
+view_info          = iP.Results.view_info;
+
 % Configuration
 L = length(secs); HZ = round(L/(secs(end)-secs(1)));
 % Video path
 vid_path_org = sprintf('%s/%s_org.mp4',folder_path,chain_name);
 vid_path_cf  = sprintf('%s/%s_cf.mp4',folder_path,chain_name);
-if exist(vid_path_org,'file') && exist(vid_path_cf,'file') && SKIP_IF_MP4_EXIST
+if exist(vid_path_org,'file') && exist(vid_path_cf,'file') && SKIP_IF_VID_EXISTS
     fprintf(2,'[animate_sch_results] Skip as [%s] and [%s] exist. \n',vid_path_org,vid_path_cf);
     return;
 end
@@ -51,13 +60,11 @@ for tick = 1:L % for each tick
     chain_cf = move_chain_two_feet_on_ground(chain_cf);
     % Animate
     if PLOT_EACH_TICK
-        fig_w_rig = 0.17; 
-        fig_h_rig = 0.3;
-
         % Plot original skeleton
-        fig_idx = 1; fig_pos = [0.0,0.6,fig_w_rig,fig_h_rig];
+        fig_idx = 1; fig_pos = [0.0,0.6,fig_w,fig_h];
         fig1 = plot_chain(chain_org,...
             'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,'AXIS_OFF',AXIS_OFF,...
+            'SET_AXISLABEL',SET_AXISLABEL,'axes_info',axes_info,...
             'SET_MATERIAL','DULL','axis_info',axis_info,'view_info',view_info,...
             'PLOT_ROTATE_AXIS',0,'PLOT_LINK',0,'PLOT_JOINT_AXIS',0,'jalw',3,...
             'PLOT_JOINT_SPHERE',0,'jsr',0.01,'bafa',0.5,'mfa',mfa,...
@@ -80,13 +87,16 @@ for tick = 1:L % for each tick
         if SC, tfc = 'r'; else, tfc = 'k'; end; tfs = 15;
         title_str = sprintf('[%d/%d][%.1f]sec Original SC:[%d] \n (%s)',...
             tick,L,sec,SC,chain_name);
-        plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex','tfc',tfc);
+        if ~AXIS_OFF
+            plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex','tfc',tfc);
+        end
         drawnow; record_vid(vobj_org,'fig',fig1);
 
         % Plot collision-free skeleton
-        fig_idx = 2; fig_pos = [fig_w_rig,0.6,fig_w_rig,fig_h_rig];
+        fig_idx = 2; fig_pos = [fig_w,0.6,fig_w,fig_h];
         fig2 = plot_chain(chain_cf,...
             'fig_idx',fig_idx,'subfig_idx',1,'fig_pos',fig_pos,'AXIS_OFF',AXIS_OFF,...
+            'SET_AXISLABEL',SET_AXISLABEL,'axes_info',axes_info,...
             'SET_MATERIAL','DULL','axis_info',axis_info,'view_info',view_info,...
             'PLOT_ROTATE_AXIS',0,'PLOT_LINK',0,'PLOT_JOINT_AXIS',0,'jalw',3,...
             'PLOT_JOINT_SPHERE',0,'jsr',0.01,'bafa',0.5,'mfa',mfa,...
@@ -109,7 +119,9 @@ for tick = 1:L % for each tick
         if SC_cf, tfc = 'r'; else, tfc = 'k'; end; tfs = 15;
         title_str = sprintf('[%d/%d][%.1f]sec Collision-Free SC:[%d] \n (%s)',...
             tick,L,sec,SC_cf,chain_name);
-        plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex','tfc',tfc);
+        if ~AXIS_OFF
+            plot_title(title_str,'fig_idx',fig_idx,'tfs',tfs,'interpreter','latex','tfc',tfc);
+        end
         drawnow; record_vid(vobj_cf,'fig',fig2);
 
         % Figure close handling
