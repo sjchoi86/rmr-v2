@@ -1,21 +1,22 @@
 addpath_yart
 %% Motion Retargeting from Video (using MHFormer)
 ccc
+% Check available motions
+info = get_mhformer_info('folder_path','../../mhformer-for-rmr/demo/result','VERBOSE',1);
 
+%% Run motion retargeting with a specific motion 
 % Specify which motion and robots to use
 mocap_type  = 'mhformer';
-motion_name = 'idle_motion'; % <= modify this part
+motion_name = 'dr_strange2'; % <= modify this part
 robot_names = {'ambidex','atlas','coman','thormang'};
 
-% Get motion indices
-info = get_mhformer_info('folder_path','../mocap/mhformer/','VERBOSE',1);
 mocap_names = cell(1,length(info));
 for m_idx = 1:length(info), mocap_names{m_idx} = info(m_idx).name; end
 mocap_idxs = idxs_cell(mocap_names,{motion_name}); % select 'idle_motion'
 
 % Run configuration
-SKIP_IF_MAT_EXIST  = 1;
-SKIP_IF_VID_EXISTS = 1;
+SKIP_IF_MAT_EXIST  = 0;
+SKIP_IF_VID_EXISTS = 0;
 fig_w              = 0.15;
 fig_h              = 0.3;
 AXIS_OFF           = 1;
@@ -150,7 +151,7 @@ for m_idx = 1:length(mocap_idxs) % for different mocaps
             'GIMBAL_LOCK_HEURISTICS',1,'gimbal_threshold',0.05,'VERBOSE',1,...
             'PLOT_IK_INSIDE',0,'PLOT_EACH_TICK',0,...
             'SKIP_IF_MAT_EXIST',SKIP_IF_MAT_EXIST,'SAVE_MAT',1,...
-            'max_ik_tick',100);
+            'max_ik_tick',50);
 
         % Playback motion retargeting results
         ca; % close all
@@ -177,7 +178,7 @@ for m_idx = 1:length(mocap_idxs) % for different mocaps
             'GIMBAL_LOCK_HEURISTICS',1,'gimbal_threshold',0.05,'VERBOSE',1,...
             'PLOT_IK_INSIDE',0,'PLOT_EACH_TICK',0,...
             'SKIP_IF_MAT_EXIST',SKIP_IF_MAT_EXIST,'SAVE_MAT',1,...
-            'max_ik_tick',100);
+            'max_ik_tick',50);
 
         % Smoothing and collision handling of motion retargㅏeting results
         ca; % close all
@@ -242,6 +243,7 @@ for m_idx = 1:length(mocap_idxs) % for different mocaps
     end
 
     % Animate
+    ca;
     vid_path = sprintf('../vid/demo/mr_%s.mp4',mocap_name);
     vobj = init_vid_record(vid_path,'HZ',HZ,'SAVE_VID',1);
     for tick = 1:L % for each tick
