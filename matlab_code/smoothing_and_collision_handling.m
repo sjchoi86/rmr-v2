@@ -1,4 +1,5 @@
-function smoothing_and_collision_handling(chain,secs,T_roots,q_revs,varargin)
+function [q_revs_cf,T_roots_cf] = smoothing_and_collision_handling(...
+    chain,secs,T_roots,q_revs,varargin)
 %{
     Smoothing and collision handling of kinematic chains
 %}
